@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Coming Soon....</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --maroon: #380813;
+      --maroon-hi: #5c1124;
+      --maroon-lo: #1d040a;
+      --cream: #F7F5EB;
+      --gold: #e9d3a6;
+      --ink: #7a6a52;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--maroon-lo);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      overscroll-behavior: none
+    }
+
+    body {
+      cursor: grab;
+      font-family: "Cormorant Garamond", "Playfair Display", "Didot", "Bodoni MT", Georgia, "Times New Roman", serif
+    }
+
+    body.grabbing {
+      cursor: grabbing
+    }
+
+    /* ---------- Revealed burgundy layer ---------- */
+    .under {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background:
+        radial-gradient(ellipse 80% 70% at 50% 46%, var(--maroon-hi) 0%, var(--maroon) 55%, var(--maroon-lo) 100%);
+    }
+
+    .under::before {
+      /* velvety paper grain */
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .5;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .2  0 0 0 0 .25  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    }
+
+    .msg {
+      position: relative;
+      padding: 0 5vw
+    }
+
+    .msg h1 {
+      font-weight: 500;
+      font-style: italic;
+      font-family: 'Playfair Display', serif;
+      letter-spacing: .01em;
+      line-height: 1;
+      font-size: clamp(2.7rem, 11vw, 8rem);
+      color: #f4e7cf;
+      background: linear-gradient(180deg, #fbf0da 20%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 14px rgba(0, 0, 0, .45));
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity 1.1s ease .1s, transform 1.3s cubic-bezier(.2, .8, .2, 1) .1s
+    }
+
+    .msg p {
+      margin-top: clamp(.8rem, 2vh, 1.4rem);
+      color: #c9a98b;
+      font-size: clamp(1rem, 2.4vw, 1.3rem);
+      font-style: italic;
+      font-family: 'Playfair Display', serif;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 1.2s ease .5s, transform 1.2s ease .5s
+    }
+
+    body.in .msg h1 {
+      opacity: 1;
+      transform: none
+    }
+
+    body.done .msg p {
+      opacity: .85;
+      transform: none
+    }
+
+    /* ---------- Paper canvas ---------- */
+    #paper {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none
+    }
+
+    /* ---------- Hint + replay ---------- */
+    .hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(8vh + env(safe-area-inset-bottom, 0px));
+      text-align: center;
+      pointer-events: none;
+      color: var(--ink);
+      font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+      font-style: italic;
+      letter-spacing: .04em
+    }
+
+    .hint i {
+      display: inline-block;
+      font-style: normal;
+      margin-left: .5em;
+      animation: nudge 1.5s ease-in-out infinite
+    }
+
+    @keyframes nudge {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      50% {
+        transform: translateX(9px)
+      }
+    }
+
+    .replay {
+      position: fixed;
+      left: 50%;
+      bottom: calc(7vh + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      font: italic 1.05rem/1 inherit;
+      font-family: inherit;
+      color: #d9bfa0;
+      background: none;
+      border: 1px solid rgba(217, 191, 160, .4);
+      padding: .7em 1.5em;
+      border-radius: 99px;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .8s ease 1s, background .2s
+    }
+
+    .replay:hover,
+    .replay:focus-visible {
+      background: rgba(217, 191, 160, .12);
+      outline: none
+    }
+
+    .replay:focus-visible {
+      border-color: #f4e7cf
+    }
+
+    body.done .replay {
+      opacity: 1;
+      pointer-events: auto
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      .hint i {
+        animation: none
+      }
+
+      .msg h1,
+      .msg p {
+        transition-duration: .01s
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="under">
+    <div class="msg">
+      <h1>Coming Soon....</h1>
+      <p>Something quietly beautiful is taking shape.</p>
+    </div>
+  </main>
+
+  <canvas id="paper" aria-hidden="true"></canvas>
+  <div class="hint" id="hint">Drag to tear<i>→</i></div>
+  <button class="replay" id="replay" type="button">Roll the paper back</button>
+
+  <script>
+    (() => {
+      const cv = document.getElementById('paper'), ctx = cv.getContext('2d');
+      const hint = document.getElementById('hint'), replay = document.getElementById('replay');
+      const STEP = 3, REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let W, H, dpr, band, cy, N, top, bot, fT, fB, hairs, pat;
+      let pos = 0, vel = 0, target = 0, drag = false, touched = false, committed = false;
+      let sx = 0, sp = 0, lastX = 0, lastT = 0, vx = 0;
+
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const rnd = (a, b) => a + Math.random() * (b - a);
+
+      /* ---------- Paper texture tile (generated, no assets) ---------- */
+      function makeTile() {
+        const s = Math.round(300 * dpr), t = document.createElement('canvas');
+        t.width = t.height = s;
+        const c = t.getContext('2d'), img = c.createImageData(s, s), d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = (Math.random() - .5) * 11;
+          d[i] = 247 + n; d[i + 1] = 245 + n; d[i + 2] = 235 + n * 1.2; d[i + 3] = 255;
+        }
+        c.putImageData(img, 0, 0);
+        c.lineCap = 'round';
+        for (let i = 0; i < 260; i++) {           // paper fibres
+          const x = Math.random() * s, y = Math.random() * s, a = Math.random() * 6.28, l = rnd(4, 16) * dpr;
+          c.strokeStyle = Math.random() < .5 ? 'rgba(255,255,255,.55)' : 'rgba(140,118,84,.09)';
+          c.lineWidth = rnd(.4, 1) * dpr;
+          c.beginPath(); c.moveTo(x, y);
+          c.quadraticCurveTo(x + Math.cos(a) * l / 2 + rnd(-3, 3), y + Math.sin(a) * l / 2 + rnd(-3, 3), x + Math.cos(a) * l, y + Math.sin(a) * l);
+          c.stroke();
+        }
+        for (let i = 0; i < 14; i++) {            // soft tonal blotches
+          const x = Math.random() * s, y = Math.random() * s, r = rnd(30, 90) * dpr;
+          const g = c.createRadialGradient(x, y, 0, x, y, r);
+          g.addColorStop(0, 'rgba(176,150,105,.05)'); g.addColorStop(1, 'rgba(176,150,105,0)');
+          c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2);
+        }
+        pat = ctx.createPattern(t, 'repeat');
+        pat.setTransform(new DOMMatrix().scale(1 / dpr));
+      }
+
+      /* ---------- Jagged tear edges ---------- */
+      function build() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = innerWidth; H = innerHeight;
+        cv.width = W * dpr; cv.height = H * dpr;
+        band = clamp(H * .44, 220, 380); cy = H / 2;
+        N = Math.ceil((W + 320) / STEP) + 2;
+        top = []; bot = []; fT = []; fB = []; hairs = [];
+        const ph = [0, 1, 2, 3].map(() => Math.random() * 6.28);
+        const spike = () => Math.random() < .07 ? rnd(-10, 10) : 0;
+        for (let i = 0; i < N; i++) {
+          const x = i * STEP;
+          top.push(cy - band / 2 + Math.sin(x * .004 + ph[0]) * 10 + Math.sin(x * .011 + ph[1]) * 5 + rnd(-4, 4) + spike());
+          bot.push(cy + band / 2 + Math.sin(x * .005 + ph[2]) * 10 + Math.sin(x * .013 + ph[3]) * 5 + rnd(-4, 4) + spike());
+          fT.push(rnd(2, 7)); fB.push(rnd(2, 7));
+          if (Math.random() < .55) hairs.push([i, 0, rnd(-4, 4), rnd(3, 9)]);
+          if (Math.random() < .55) hairs.push([i, 1, rnd(-4, 4), rnd(3, 9)]);
+        }
+        makeTile();
+        if (committed) pos = target = W + 150;
+      }
+
+      /* ---------- Drawing ---------- */
+      function poly(iEnd) {
+        ctx.beginPath(); ctx.moveTo(-6, top[0]);
+        for (let i = 0; i <= iEnd; i++) ctx.lineTo(i * STEP, top[i]);
+        for (let i = iEnd; i >= 0; i--) ctx.lineTo(i * STEP, bot[i]);
+        ctx.lineTo(-6, bot[0]); ctx.closePath();
+      }
+
+      function render(t) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H);
+        const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .75);
+        vg.addColorStop(0, 'rgba(120,92,55,0)'); vg.addColorStop(1, 'rgba(120,92,55,.16)');
+        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+        const p = clamp(pos / W, 0, 1);
+        const idle = (!touched && !REDUCED) ? (Math.sin(t / 520) * .5 + .5) * 16 : 0;
+        const gx = pos + 22 + idle, rw = 18 + 34 * p;
+        const iEnd = Math.min(N - 1, Math.ceil((gx + rw * .3) / STEP));
+
+        // 1. shadow cast onto paper around the opening
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.shadowColor = 'rgba(40,18,8,.55)'; ctx.shadowBlur = 24 * dpr;
+        poly(iEnd); ctx.fillStyle = '#000'; ctx.fill();
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+        ctx.globalCompositeOperation = 'source-over';
+
+        // 2. white torn-fibre rim on both edges
+        ctx.fillStyle = '#fffdf6';
+        ctx.beginPath(); ctx.moveTo(0, top[0]);
+        for (let i = 0; i <= iEnd; i++) ctx.lineTo(i * STEP, top[i]);
+        for (let i = iEnd; i >= 0; i--) ctx.lineTo(i * STEP, top[i] - fT[i]);
+        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(0, bot[0]);
+        for (let i = 0; i <= iEnd; i++) ctx.lineTo(i * STEP, bot[i]);
+        for (let i = iEnd; i >= 0; i--) ctx.lineTo(i * STEP, bot[i] + fB[i]);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,250,.75)'; ctx.lineWidth = .8; ctx.beginPath();
+        for (const [i, s, dx, l] of hairs) {
+          if (i > iEnd) continue;
+          const x = i * STEP, y = s ? bot[i] : top[i], d = s ? 1 : -1;
+          ctx.moveTo(x, y); ctx.lineTo(x + dx, y + d * (l + (s ? fB[i] : fT[i]) * .5));
+        }
+        ctx.stroke();
+
+        // 3. cut the opening
+        ctx.globalCompositeOperation = 'destination-out';
+        poly(iEnd); ctx.fillStyle = '#000'; ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+
+        // 4. paper edges shade the burgundy beneath
+        ctx.save(); poly(iEnd); ctx.clip();
+        const y0 = cy - band / 2 - 14, y1 = cy + band / 2 + 14;
+        const sg = ctx.createLinearGradient(0, y0, 0, y1);
+        sg.addColorStop(0, 'rgba(0,0,0,.6)'); sg.addColorStop(.2, 'rgba(0,0,0,0)');
+        sg.addColorStop(.8, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,.6)');
+        ctx.fillStyle = sg; ctx.fillRect(0, y0, gx + rw, y1 - y0);
+        ctx.restore();
+
+        // 5. the paper roll on the leading edge
+        const x0 = gx - rw * .35, x1 = x0 + rw;
+        if (x0 < W + 4) {
+          const i0 = clamp(Math.floor(x0 / STEP), 0, N - 1), i1 = clamp(Math.ceil(x1 / STEP), 0, N - 1);
+          ctx.beginPath(); ctx.moveTo(i0 * STEP, top[i0] - 6);
+          for (let i = i0; i <= i1; i++) ctx.lineTo(i * STEP, top[i] - 6);
+          for (let i = i1; i >= i0; i--) ctx.lineTo(i * STEP, bot[i] + 6);
+          ctx.closePath();
+          const hp = .22 + .14 * p, g = ctx.createLinearGradient(x0, 0, x1, 0);
+          g.addColorStop(0, '#a99e85'); g.addColorStop(.1, '#d9d1bb'); g.addColorStop(hp, '#fffef6');
+          g.addColorStop(hp + .22, '#efe9d8'); g.addColorStop(.78, '#cdc3aa'); g.addColorStop(1, '#8f846c');
+          ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 30 * dpr; ctx.shadowOffsetX = -9 * dpr;
+          ctx.fillStyle = g; ctx.fill();
+          ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0;
+          const eg = ctx.createLinearGradient(0, y0 - 6, 0, y1 + 6);   // end-cap darkening
+          eg.addColorStop(0, 'rgba(70,45,20,.32)'); eg.addColorStop(.1, 'rgba(70,45,20,0)');
+          eg.addColorStop(.9, 'rgba(70,45,20,0)'); eg.addColorStop(1, 'rgba(70,45,20,.36)');
+          ctx.fillStyle = eg; ctx.fill();
+          const im = clamp(Math.round(cy / STEP), 0, N - 1);          // wound layers
+          ctx.lineWidth = 1;
+          for (const k of [.2, .4, .7]) {
+            ctx.strokeStyle = 'rgba(110,92,64,.22)'; ctx.beginPath();
+            ctx.moveTo(x0 + rw * k, top[im] - band / 2 + 4); ctx.lineTo(x0 + rw * k, bot[im] + band / 2 - 4); ctx.stroke();
+          }
+        }
+      }
+
+      /* ---------- Spring loop ---------- */
+      let last = performance.now();
+      function frame(t) {
+        const dt = Math.min(.033, (t - last) / 1000); last = t;
+        if (drag) { pos += (target - pos) * Math.min(1, dt * 22); vel = 0; }
+        else {
+          const K = 140, C = 16;
+          for (let s = 0; s < 3; s++) {
+            const h = dt / 3; vel += (K * (target - pos) - C * vel) * h; pos += vel * h;
+          }
+        }
+        const p = pos / W;
+        document.body.classList.toggle('in', p > .08);
+        document.body.classList.toggle('done', !drag && committed && p > .9);
+        hint.style.opacity = clamp(1 - pos / 100, 0, 1);
+        render(t);
+        requestAnimationFrame(frame);
+      }
+
+      /* ---------- Input (mouse + touch) ---------- */
+      function down(x) {
+        drag = true; touched = true; sx = x; sp = pos; lastX = x; lastT = performance.now(); vx = 0;
+        target = pos; document.body.classList.add('grabbing');
+      }
+      function move(x) {
+        if (!drag) return;
+        const n = performance.now(), dt = Math.max(1, n - lastT);
+        vx = vx * .7 + ((x - lastX) / dt * 1000) * .3; lastX = x; lastT = n;
+        target = clamp(sp + (x - sx), 0, W + 150);
+      }
+      function up() {
+        if (!drag) return;
+        drag = false; document.body.classList.remove('grabbing');
+        const p = pos / W;
+        committed = (p > .55 || (vx > 900 && p > .2)) && !(vx < -900);
+        target = committed ? W + 150 : 0;
+        vel = clamp(vx, -2500, 2500) * .35;
+      }
+      addEventListener('mousedown', e => { if (e.target === replay) return; e.preventDefault(); down(e.clientX); });
+      addEventListener('mousemove', e => move(e.clientX));
+      addEventListener('mouseup', up);
+      addEventListener('touchstart', e => { if (e.target === replay) return; down(e.touches[0].clientX); }, { passive: true });
+      addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX); }, { passive: false });
+      addEventListener('touchend', up);
+      addEventListener('touchcancel', up);
+      replay.addEventListener('click', () => { committed = false; target = 0; vel = -400; });
+      addEventListener('resize', build);
+
+      build();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+
+</html>
