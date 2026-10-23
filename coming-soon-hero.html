@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coming Soon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Design tokens ---------- */
+  :root {
+    --bg: #0f0f11;
+    --ink: #f2ece2;          /* warm off-white */
+    --muted: #6f665d;
+    --accent: #e8a75d;       /* latte amber */
+    --accent-lo: #b4743a;
+    --accent-hi: #ffd8a0;
+    --seg-off: #1e1b19;
+    --frame: #2b2724;
+    --px: 4px;               /* one "art pixel" in CSS px — everything snaps to this */
+    --fs: 24px;              /* headline: multiples of 8 keep Press Start 2P crisp */
+  }
+  @media (max-width: 600px), (max-height: 560px) {
+    :root { --px: 3px; --fs: 16px; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); }
+  body {
+    color: var(--ink);
+    font-family: 'Press Start 2P', ui-monospace, Menlo, Consolas, monospace;
+    -webkit-font-smoothing: none;
+    font-synthesis: none;
+  }
+
+  /* ---------- Hero layout ---------- */
+  .px-hero {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--px) * 7);
+    padding: 24px 16px;
+    overflow: hidden;
+    /* faint warm pool of light behind the mug */
+    background: radial-gradient(ellipse 38% 34% at 50% 40%, #15130f 0%, var(--bg) 100%);
+  }
+
+  /* Fixed box reserves the canvas space before JS runs → no layout shift */
+  .px-stage {
+    width: calc(var(--px) * 48);
+    height: calc(var(--px) * 64);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .px-stage canvas {
+    display: block;
+    image-rendering: crisp-edges;   /* Firefox */
+    image-rendering: pixelated;     /* Chromium / Safari */
+  }
+
+  /* ---------- Headline ---------- */
+  .px-title {
+    height: calc(var(--fs) * 1.5);  /* fixed line box: font swap can't shift layout */
+    font-size: var(--fs);
+    line-height: 1.5;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    text-shadow: calc(var(--fs) / 8) calc(var(--fs) / 8) 0 #3a2616;  /* hard 1-font-pixel drop shadow */
+    animation: px-pulse 2.8s steps(7) infinite;
+  }
+  /* dots keep their width (visibility, not display) so text never jumps */
+  .px-dots i { font-style: normal; visibility: hidden; }
+  .px-dots i:nth-child(1) { animation: px-d1 1.6s steps(1) infinite; }
+  .px-dots i:nth-child(2) { animation: px-d2 1.6s steps(1) infinite; }
+  .px-dots i:nth-child(3) { animation: px-d3 1.6s steps(1) infinite; }
+
+  @keyframes px-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.74; } }
+  @keyframes px-d1 { 0%, 24% { visibility: hidden; } 25%, 100% { visibility: visible; } }
+  @keyframes px-d2 { 0%, 49% { visibility: hidden; } 50%, 100% { visibility: visible; } }
+  @keyframes px-d3 { 0%, 74% { visibility: hidden; } 75%, 100% { visibility: visible; } }
+
+  /* ---------- 8-bit progress bar ---------- */
+  .px-loader { display: flex; flex-direction: column; gap: calc(var(--px) * 3); }
+  .px-bar {
+    display: flex;
+    gap: var(--px);
+    padding: calc(var(--px) * 2);
+    background: #131215;
+    /* four offset shadows = chunky pixel frame with notched corners */
+    box-shadow:
+      0 calc(var(--px) * -1) 0 var(--frame),
+      0 var(--px) 0 var(--frame),
+      calc(var(--px) * -1) 0 0 var(--frame),
+      var(--px) 0 0 var(--frame);
+  }
+  .px-bar i {
+    width: calc(var(--px) * 3);
+    height: calc(var(--px) * 4);
+    background: var(--seg-off);
+  }
+  .px-bar i.on    { background: var(--accent); box-shadow: inset 0 calc(var(--px) * -1) 0 var(--accent-lo); }
+  .px-bar i.flash { background: var(--accent-hi); box-shadow: inset 0 calc(var(--px) * -1) 0 var(--accent); }
+  .px-bar i.head  { background: #5a3e22; }
+
+  .px-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: calc(var(--fs) / 2);
+    line-height: 1;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .px-title { animation: none; }
+    .px-dots i { animation: none; visibility: visible; }
+  }
+</style>
+</head>
+<body>
+
+<section class="px-hero" id="hero">
+  <div class="px-stage" id="stage">
+    <canvas id="mug" role="img" aria-label="Pixel-art mug with rising steam"></canvas>
+  </div>
+
+  <h1 class="px-title" aria-label="Coming soon">COMING SOON<span class="px-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></h1>
+
+  <div class="px-loader">
+    <div class="px-bar" id="bar" role="progressbar" aria-label="Brewing"></div>
+    <div class="px-meta" aria-hidden="true"><span>BREWING</span><span id="pct">0%</span></div>
+  </div>
+</section>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Art ---------- */
+  const COLS = 48, ROWS = 64;                       // canvas size in art pixels
+  const PAL = {
+    o: '#2b2522',  // outline
+    r: '#ffffff',  // rim light
+    w: '#f2ece2',  // ceramic
+    s: '#d6cbbb',  // shade
+    d: '#a99c8a',  // deep shade
+    k: '#2e1a10',  // coffee in shadow
+    c: '#5e3620',  // coffee
+    h: '#a8714a',  // crema glint
+    a: '#d9644e',  // heart
+    x: '#17171a'   // cast shadow
+  };
+  // 32×25 sprite. '.' = transparent. Body cols 2–23, handle cols 24–29.
+  const MUG = [
+    '...oooooooooooooooooooo.........',
+    '..owwwwwwwwwwwwwwwwwwwso........',
+    '..owkkkkkkkkkkkkkkkkkwso........',
+    '..owcchhcccccccccccccwso........',
+    '..owwwwwwwwwwwwwwwwwwsso........',
+    '..orwwwwwwwwwwwwwwwwssdo........',
+    '..orwwwwwwwwwwwwwwwwssdoooooo...',
+    '..orwwwwwwwwwwwwwwwwssdowwwwso..',
+    '..orwwwwwwwwwwwwwwwwssdoooowso..',
+    '..orwwwwwwwwwwwwwwwwssdo..owso..',
+    '..orwwwwwwaawaawwwwwssdo..owso..',
+    '..orwwwwwwaaaaawwwwwssdo..owso..',
+    '..orwwwwwwwaaawwwwwwssdoooowso..',
+    '..orwwwwwwwwawwwwwwwssdowwwwso..',
+    '..orwwwwwwwwwwwwwwwwssdoooooo...',
+    '..orwwwwwwwwwwwwwwwwssdo........',
+    '..orwwwwwwwwwwwwwwwwssdo........',
+    '..orwwwwwwwwwwwwwwwwssdo........',
+    '..orwwwwwwwwwwwwwwwwssdo........',
+    '..orwwwwwwwwwwwwwwwwssdo........',
+    '..oswwwwwwwwwwwwwwwssddo........',
+    '...ossssssssssssssssddo.........',
+    '....oooooooooooooooooo..........',
+    '..xxxxxxxxxxxxxxxxxxxxxxxx......',
+    '....xxxxxxxxxxxxxxxxxx..........'
+  ];
+  const MUG_W = 32, MUG_H = MUG.length;
+  const MUG_X = 11;                                 // body centre (col 13) lands on canvas centre (col 24)
+  const MUG_Y = ROWS - MUG_H;
+  const ORIGIN_Y = MUG_Y + 3;                       // steam emerges from the coffee surface
+  const LANES = [8, 12.5, 17].map(c => MUG_X + c);  // three wisps
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hero = document.getElementById('hero');
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('mug');
+  const ctx = canvas.getContext('2d');
+  const sprite = document.createElement('canvas');
+  let P = 4;                                        // device pixels per art pixel
+
+  /* ---------- High-DPI setup: integer device pixels per art pixel ---------- */
+  function setup() {
+    const css = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--px')) || 4;
+    const dpr = window.devicePixelRatio || 1;
+    P = Math.max(1, Math.round(css * dpr));
+    canvas.width = COLS * P;
+    canvas.height = ROWS * P;
+    canvas.style.width = canvas.width / dpr + 'px';
+    canvas.style.height = canvas.height / dpr + 'px';
+
+    // Pre-render the mug once per resize
+    sprite.width = MUG_W * P;
+    sprite.height = MUG_H * P;
+    const s = sprite.getContext('2d');
+    MUG.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const col = PAL[row[x]];
+        if (col) { s.fillStyle = col; s.fillRect(x * P, y * P, P, P); }
+      }
+    });
+    ctx.imageSmoothingEnabled = false;
+  }
+
+  /* ---------- Steam particles ---------- */
+  const parts = [];
+  const MAX = 140;
+  let spawnAcc = 0, boost = 0, wind = 0, windTarget = 0;
+
+  function spawn(n) {
+    for (let i = 0; i < n && parts.length < MAX; i++) {
+      parts.push({
+        x0: LANES[(Math.random() * 3) | 0] + (Math.random() * 2 - 1),
+        y: ORIGIN_Y + Math.random(),
+        vy: 4.5 + Math.random() * 3.5,              // art px / s
+        age: 0,
+        life: 3.2 + Math.random() * 2,
+        ph: Math.random() * Math.PI * 2,
+        f: 1.2 + Math.random() * 1.2,               // sway frequency
+        amp: 1.2 + Math.random() * 2,               // sway amplitude (art px)
+        big: Math.random() < 0.4,
+        drift: 0
+      });
+    }
+  }
+
+  function step(dt) {
+    spawnAcc += (15 + boost * 30) * dt;              // hover / tap boosts emission
+    const n = spawnAcc | 0;
+    spawnAcc -= n;
+    spawn(n);
+    boost = Math.max(0, boost - dt * 0.8);
+    wind += (windTarget - wind) * Math.min(1, dt * 2);
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      p.age += dt;
+      p.y -= p.vy * dt;
+      p.drift += wind * dt * Math.min(1, (ORIGIN_Y - p.y) / 12);
+      if (p.age >= p.life || p.y < 0) parts.splice(i, 1);
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = PAL.w;
+    for (const p of parts) {
+      const rise = ORIGIN_Y - p.y;
+      const k = p.age / p.life;
+      // sinusoidal sway that widens as the wisp rises
+      const x = p.x0 + p.drift + Math.sin(p.ph + p.age * p.f + rise * 0.22) * p.amp * Math.min(1, rise / 8);
+      // fade in → fade with age → dissipate with height
+      let a = Math.min(1, p.age / 0.35) * Math.pow(1 - k, 1.4) * Math.min(1, p.y / (ORIGIN_Y * 0.6)) * 0.75;
+      a = Math.round(a * 8) / 8;                    // quantised alpha = stepped, 8-bit fade
+      if (a <= 0) continue;
+      const sz = p.big && k > 0.12 && k < 0.65 ? 2 : 1;
+      ctx.globalAlpha = a;
+      ctx.fillRect(Math.round(x) * P, Math.round(p.y) * P, sz * P, sz * P);
+    }
+    ctx.globalAlpha = 1;
+    ctx.drawImage(sprite, MUG_X * P, MUG_Y * P);    // mug in front hides steam below the rim
+  }
+
+  /* ---------- Segmented progress bar ---------- */
+  const SEG = 20;
+  const bar = document.getElementById('bar');
+  const pctEl = document.getElementById('pct');
+  const segs = Array.from({ length: SEG }, () => bar.appendChild(document.createElement('i')));
+  const FILL = 3.0, HOLD = 0.9, WIPE = 0.7, CYCLE = FILL + HOLD + WIPE;
+  let lastKey = '';
+
+  function updateBar(t) {
+    const c = t % CYCLE;
+    let from = 0, filled, head = -1, pct, flash = false;
+    if (c < FILL) {                                 // fill one segment per beat
+      const f = c / FILL;
+      filled = Math.floor(f * SEG); head = filled; pct = Math.floor(f * 100);
+    } else if (c < FILL + HOLD) {                   // full: blink twice
+      filled = SEG; pct = 100; flash = Math.floor((c - FILL) / 0.15) % 2 === 0;
+    } else {                                        // scan-wipe left → right
+      from = Math.floor(((c - FILL - HOLD) / WIPE) * SEG); filled = SEG; pct = 100;
+    }
+    const key = from + '|' + filled + '|' + flash + '|' + pct;
+    if (key === lastKey) return;                    // touch the DOM only on change
+    lastKey = key;
+    for (let i = 0; i < SEG; i++) {
+      segs[i].className = i < from ? '' : i < filled ? (flash ? 'flash' : 'on') : i === head ? 'head' : '';
+    }
+    pctEl.textContent = pct + '%';
+  }
+
+  /* ---------- Micro-interactions ---------- */
+  hero.addEventListener('pointermove', e => {
+    const r = hero.getBoundingClientRect();
+    const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);   // -1 … 1
+    windTarget = -dx * 3;                           // steam leans away from the cursor
+  });
+  hero.addEventListener('pointerleave', () => { windTarget = 0; });
+  stage.addEventListener('pointerenter', () => { boost = Math.max(boost, 0.6); });
+  stage.addEventListener('pointerdown', () => { boost = 1; spawn(18); });   // tap = puff
+
+  /* ---------- Loop (paused when off-screen or tab hidden) ---------- */
+  let raf = 0, last = 0, running = false;
+  function frame(now) {
+    const t = now / 1000;
+    const dt = Math.min(0.05, t - last);
+    last = t;
+    step(dt);
+    draw();
+    if (!reduce) updateBar(t);                      // steam always moves; bar honours reduced motion
+    raf = requestAnimationFrame(frame);
+  }
+  function start() {
+    if (running) return;
+    running = true;
+    last = performance.now() / 1000;
+    raf = requestAnimationFrame(frame);
+  }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  setup();
+  for (let i = 0; i < 120; i++) step(1 / 30);       // pre-warm so steam is already rising
+  draw();
+
+  if (reduce) updateBar(FILL * 0.6);                // static, partially filled bar
+  new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop())).observe(hero);
+
+  window.addEventListener('resize', () => { setup(); draw(); });
+})();
+</script>
+</body>
+</html>
